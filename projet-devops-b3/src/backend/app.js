@@ -12,6 +12,14 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Sync database
+const { User, Patient, Glycemie } = require('./models/index');
+const sequelize = require('./config/database');
+
+sequelize.sync({ alter: true }).then(() => {
+  console.log('✅ Base de données synchronisée');
+}).catch(e => console.log('❌ Erreur DB:', e.message));
+
 // Routes
 const authRoutes = require('./routes/auth');
 const patientRoutes = require('./routes/patients');
