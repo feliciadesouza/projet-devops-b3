@@ -28,13 +28,18 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('Login attempt:', email);
 
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email: email.trim() } });
+    console.log('User found:', user ? 'yes' : 'no');
+    
     if (!user) {
       return res.status(404).json({ message: 'Utilisateur non trouvé' });
     }
 
     const isValid = await bcrypt.compare(password, user.password);
+    console.log('Password valid:', isValid);
+    
     if (!isValid) {
       return res.status(401).json({ message: 'Mot de passe incorrect' });
     }
@@ -47,6 +52,7 @@ exports.login = async (req, res) => {
 
     res.json({ token, user: { id: user.id, nom: user.nom, prenom: user.prenom, role: user.role } });
   } catch (error) {
+    console.log('Error:', error.message);
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
