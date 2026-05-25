@@ -375,6 +375,12 @@ Cette commande permet de lancer :
 | POST | `/api/glycemies` | Ajouter une mesure de glycémie | Oui |
 
 
+La documentation OpenAPI complète est disponible dans :
+
+    docs/openapi.yaml
+
+Elle décrit les endpoints d’authentification, de gestion des patients et de gestion des mesures de glycémie.
+
 
 &#x20;Tests
 
