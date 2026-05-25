@@ -1,0 +1,448 @@
+openapi: 3.0.3
+info:
+  title: DiabèteTrack API
+  description: API REST pour la gestion des utilisateurs, des patients et des mesures de glycémie.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Serveur local
+
+tags:
+  - name: Health
+    description: Vérification de l’état de l’API
+  - name: Auth
+    description: Authentification et gestion des utilisateurs
+  - name: Patients
+    description: Gestion des patients
+  - name: Glycemies
+    description: Gestion des mesures de glycémie
+
+paths:
+  /api/health:
+    get:
+      tags:
+        - Health
+      summary: Vérifier l’état de l’API
+      responses:
+        "200":
+          description: API fonctionnelle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Inscrire un utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Utilisateur créé avec succès
+        "400":
+          description: Email déjà utilisé
+        "500":
+          description: Erreur serveur
+
+  /api/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Connecter un utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Mot de passe incorrect
+        "404":
+          description: Utilisateur non trouvé
+        "500":
+          description: Erreur serveur
+
+  /api/auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Récupérer l’utilisateur connecté
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Utilisateur connecté
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Token absent ou invalide
+
+  /api/patients:
+    get:
+      tags:
+        - Patients
+      summary: Lister les patients du médecin connecté
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Liste des patients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Patient"
+        "401":
+          description: Non authentifié
+        "500":
+          description: Erreur serveur
+
+    post:
+      tags:
+        - Patients
+      summary: Créer un patient
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePatientRequest"
+      responses:
+        "201":
+          description: Patient créé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "401":
+          description: Non authentifié
+        "500":
+          description: Erreur serveur
+
+  /api/patients/me:
+    get:
+      tags:
+        - Patients
+      summary: Récupérer le profil patient de l’utilisateur connecté
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profil patient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "404":
+          description: Patient non trouvé
+        "401":
+          description: Non authentifié
+        "500":
+          description: Erreur serveur
+
+  /api/patients/{id}:
+    get:
+      tags:
+        - Patients
+      summary: Récupérer un patient par son identifiant
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identifiant du patient
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Patient trouvé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "404":
+          description: Patient non trouvé
+        "401":
+          description: Non authentifié
+        "500":
+          description: Erreur serveur
+
+    put:
+      tags:
+        - Patients
+      summary: Modifier un patient
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identifiant du patient
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePatientRequest"
+      responses:
+        "200":
+          description: Patient modifié
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "404":
+          description: Patient non trouvé
+        "401":
+          description: Non authentifié
+        "500":
+          description: Erreur serveur
+
+  /api/glycemies:
+    get:
+      tags:
+        - Glycemies
+      summary: Lister les mesures de glycémie
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Liste des mesures de glycémie
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Glycemie"
+        "401":
+          description: Non authentifié
+        "500":
+          description: Erreur serveur
+
+    post:
+      tags:
+        - Glycemies
+      summary: Ajouter une mesure de glycémie
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGlycemieRequest"
+      responses:
+        "201":
+          description: Mesure créée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Glycemie"
+        "401":
+          description: Non authentifié
+        "500":
+          description: Erreur serveur
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: OK
+        message:
+          type: string
+          example: DiabèteTrack API is running
+
+    RegisterRequest:
+      type: object
+      required:
+        - nom
+        - prenom
+        - email
+        - password
+      properties:
+        nom:
+          type: string
+          example: SOUZA
+        prenom:
+          type: string
+          example: Felicia
+        email:
+          type: string
+          example: felicia@example.com
+        password:
+          type: string
+          example: password123
+        role:
+          type: string
+          example: medecin
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          example: felicia@example.com
+        password:
+          type: string
+          example: password123
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: jwt.token.example
+        user:
+          $ref: "#/components/schemas/User"
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nom:
+          type: string
+          example: SOUZA
+        prenom:
+          type: string
+          example: Felicia
+        email:
+          type: string
+          example: felicia@example.com
+        role:
+          type: string
+          example: medecin
+
+    Patient:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        userId:
+          type: integer
+          example: 2
+        medecinId:
+          type: integer
+          example: 1
+        dateNaissance:
+          type: string
+          format: date
+          example: "2000-01-01"
+        typeDiabete:
+          type: string
+          example: type 2
+        telephone:
+          type: string
+          example: "90000000"
+
+    CreatePatientRequest:
+      type: object
+      required:
+        - userId
+        - dateNaissance
+        - typeDiabete
+      properties:
+        userId:
+          type: integer
+          example: 2
+        dateNaissance:
+          type: string
+          format: date
+          example: "2000-01-01"
+        typeDiabete:
+          type: string
+          example: type 2
+        telephone:
+          type: string
+          example: "90000000"
+
+    UpdatePatientRequest:
+      type: object
+      properties:
+        dateNaissance:
+          type: string
+          format: date
+          example: "2000-01-01"
+        typeDiabete:
+          type: string
+          example: type 1
+        telephone:
+          type: string
+          example: "91111111"
+
+    Glycemie:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        patientId:
+          type: integer
+          example: 1
+        valeur:
+          type: number
+          example: 1.25
+        moment:
+          type: string
+          example: avant repas
+        dateMesure:
+          type: string
+          format: date-time
+          example: "2026-05-25T10:00:00Z"
+
+    CreateGlycemieRequest:
+      type: object
+      required:
+        - patientId
+        - valeur
+        - moment
+      properties:
+        patientId:
+          type: integer
+          example: 1
+        valeur:
+          type: number
+          example: 1.25
+        moment:
+          type: string
+          example: avant repas
+        dateMesure:
+          type: string
+          format: date-time
+          example: "2026-05-25T10:00:00Z"
