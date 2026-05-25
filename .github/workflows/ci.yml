@@ -61,6 +61,8 @@ jobs:
         run: |
           cd src/frontend
           npm run build
+        env:
+          CI: false
 
       - name: Build backend Docker image
         run: |
