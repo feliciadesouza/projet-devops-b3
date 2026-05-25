@@ -1,0 +1,62 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: diabetetrack
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install backend dependencies
+        run: |
+          cd src/backend
+          npm ci
+
+      - name: Run backend tests
+        run: |
+          cd src/backend
+          npm test
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: diabetetrack
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          JWT_SECRET: test_secret_key
+
+      - name: Install frontend dependencies
+        run: |
+          cd src/frontend
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd src/frontend
+          npm run build
