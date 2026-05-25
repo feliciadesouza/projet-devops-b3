@@ -43,7 +43,6 @@ variable "container_image" {
 
 data "aws_availability_zones" "available" {}
 
-# VPC
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
@@ -54,7 +53,6 @@ resource "aws_vpc" "main" {
   }
 }
 
-# Internet Gateway
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
@@ -63,7 +61,6 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-# Public subnets
 resource "aws_subnet" "public" {
   count                   = 2
   vpc_id                  = aws_vpc.main.id
@@ -76,7 +73,6 @@ resource "aws_subnet" "public" {
   }
 }
 
-# Private subnets
 resource "aws_subnet" "private" {
   count             = 2
   vpc_id            = aws_vpc.main.id
@@ -88,7 +84,6 @@ resource "aws_subnet" "private" {
   }
 }
 
-# Public route table
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -108,7 +103,6 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# Security group for Application Load Balancer
 resource "aws_security_group" "alb" {
   name        = "diabetetrack-alb-sg"
   description = "Allow HTTP traffic to the load balancer"
@@ -135,7 +129,6 @@ resource "aws_security_group" "alb" {
   }
 }
 
-# Security group for ECS tasks
 resource "aws_security_group" "ecs" {
   name        = "diabetetrack-ecs-sg"
   description = "Allow traffic from ALB to ECS tasks"
@@ -162,7 +155,6 @@ resource "aws_security_group" "ecs" {
   }
 }
 
-# Security group for RDS
 resource "aws_security_group" "rds" {
   name        = "diabetetrack-rds-sg"
   description = "Allow PostgreSQL traffic from ECS tasks"
@@ -189,7 +181,6 @@ resource "aws_security_group" "rds" {
   }
 }
 
-# DB subnet group
 resource "aws_db_subnet_group" "main" {
   name       = "diabetetrack-db-subnet-group"
   subnet_ids = aws_subnet.private[*].id
@@ -199,7 +190,6 @@ resource "aws_db_subnet_group" "main" {
   }
 }
 
-# RDS PostgreSQL
 resource "aws_db_instance" "main" {
   allocated_storage      = 20
   engine                 = "postgres"
@@ -218,7 +208,6 @@ resource "aws_db_instance" "main" {
   }
 }
 
-# ECR Repository
 resource "aws_ecr_repository" "backend" {
   name = "diabetetrack-backend"
 
@@ -231,7 +220,6 @@ resource "aws_ecr_repository" "backend" {
   }
 }
 
-# ECS Cluster
 resource "aws_ecs_cluster" "main" {
   name = "diabetetrack-cluster"
 
@@ -240,7 +228,6 @@ resource "aws_ecs_cluster" "main" {
   }
 }
 
-# CloudWatch Log Group
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/diabetetrack"
   retention_in_days = 30
@@ -250,7 +237,6 @@ resource "aws_cloudwatch_log_group" "ecs" {
   }
 }
 
-# Application Load Balancer
 resource "aws_lb" "main" {
   name               = "diabetetrack-alb"
   internal           = false
@@ -263,7 +249,6 @@ resource "aws_lb" "main" {
   }
 }
 
-# Target Group
 resource "aws_lb_target_group" "backend" {
   name        = "diabetetrack-backend-tg"
   port        = 3000
@@ -286,7 +271,6 @@ resource "aws_lb_target_group" "backend" {
   }
 }
 
-# ALB Listener
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80
@@ -298,7 +282,6 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# ECS Task Execution Role
 resource "aws_iam_role" "ecs_task_execution" {
   name = "diabetetrack-ecs-task-execution-role"
 
@@ -321,7 +304,6 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# ECS Task Definition
 resource "aws_ecs_task_definition" "backend" {
   family                   = "diabetetrack-backend-task"
   requires_compatibilities = ["FARGATE"]
@@ -387,7 +369,6 @@ resource "aws_ecs_task_definition" "backend" {
   ])
 }
 
-# ECS Service
 resource "aws_ecs_service" "backend" {
   name            = "diabetetrack-service"
   cluster         = aws_ecs_cluster.main.id
