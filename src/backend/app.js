@@ -32,8 +32,10 @@ app.use('/api/glycemies', glycemieRoutes);
 const sequelize = require('./config/database');
 require('./models/index');
 
-sequelize.sync({ alter: true }).then(() => {
-  console.log('✅ Base de données synchronisée');
-}).catch(e => console.log('❌ Erreur DB:', e.message));
+if (process.env.NODE_ENV !== 'test') {
+  sequelize.sync({ alter: true }).then(() => {
+    console.log('✅ Base de données synchronisée');
+  }).catch(e => console.log('❌ Erreur DB:', e.message));
+}
 
 module.exports = app;
