@@ -26,10 +26,11 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
@@ -60,3 +61,15 @@ jobs:
         run: |
           cd src/frontend
           npm run build
+
+      - name: Build backend Docker image
+        run: |
+          docker build -t diabetetrack-backend -f infrastructure/docker/Dockerfile.backend .
+
+      - name: Build frontend Docker image
+        run: |
+          docker build -t diabetetrack-frontend -f infrastructure/docker/Dockerfile.frontend .
+
+      - name: Validate Docker Compose configuration
+        run: |
+          docker compose -f infrastructure/docker/docker-compose.yml config
