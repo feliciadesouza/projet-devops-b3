@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
+import { getApiBaseUrl } from './config';
 
-const API = axios.create({ baseURL: 'http://localhost:3000/api' });
+const API = axios.create({ baseURL: getApiBaseUrl() });
 
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');

@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const apiRoot = (process.env.REACT_APP_API_URL || 'http://localhost:3000').replace(/\/$/, '');
+
 const API = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: `${apiRoot}/api`,
 });
 
 API.interceptors.request.use((config) => {

@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Éviter un package.json à la racine par erreur (monorepo dans src/)
+/package-lock.json
+
 # Environment variables
 .env
 .env.local
