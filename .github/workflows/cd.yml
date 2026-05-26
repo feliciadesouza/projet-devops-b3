@@ -75,3 +75,25 @@ jobs:
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
+
+      - name: Setup Node.js (frontend)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Get load balancer DNS for frontend build
+        id: alb
+        run: |
+          DNS=$(aws elbv2 describe-load-balancers --names diabetetrack-alb --query 'LoadBalancers[0].DNSName' --output text)
+          echo "api_base=http://${DNS}" >> $GITHUB_OUTPUT
+
+      - name: Build and deploy frontend to S3
+        if: ${{ vars.FRONTEND_S3_BUCKET != '' }}
+        env:
+          REACT_APP_API_URL: ${{ steps.alb.outputs.api_base }}
+          FRONTEND_S3_BUCKET: ${{ vars.FRONTEND_S3_BUCKET }}
+        run: |
+          cd src/frontend
+          npm ci
+          CI=false npm run build
+          aws s3 sync build/ "s3://${FRONTEND_S3_BUCKET}/" --delete

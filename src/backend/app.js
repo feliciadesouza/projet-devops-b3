@@ -6,10 +6,8 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({
-  origin: 'http://localhost:3001',
-  credentials: true
-}));
+const corsOrigins = require('./config/corsOrigins');
+app.use(cors({ origin: corsOrigins(), credentials: true }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

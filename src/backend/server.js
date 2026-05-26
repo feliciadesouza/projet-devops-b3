@@ -6,7 +6,8 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: 'http://localhost:3001', credentials: true }));
+const corsOrigins = require('./config/corsOrigins');
+app.use(cors({ origin: corsOrigins(), credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -27,8 +28,18 @@ require('./models/index');
 const PORT = process.env.PORT || 3000;
 
 function startServer() {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`🏥 DiabèteTrack Server running on port ${PORT}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Le port ${PORT} est déjà utilisé.`);
+      console.error('   → Arrêtez le backend Docker : docker stop docker-backend-1');
+      console.error('   → Ou changez PORT dans src/backend/.env (ex. 3002)');
+      process.exit(1);
+    }
+    throw err;
   });
 }
 

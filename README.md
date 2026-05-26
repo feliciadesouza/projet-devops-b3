@@ -499,7 +499,9 @@ Il permet de :
 - se connecter à Amazon ECR ;
 - construire l’image Docker backend ;
 - pousser l’image vers ECR ;
-- redéployer le service ECS.
+- mettre à jour la task definition ECS avec cette image ;
+- redéployer le service ECS ;
+- (optionnel) construire le frontend et le pousser sur le bucket S3 si la variable `FRONTEND_S3_BUCKET` est définie.
 
  Secrets GitHub nécessaires
 
@@ -510,6 +512,26 @@ Pour que le déploiement continu fonctionne, les secrets suivants doivent être 
 
 Ces secrets ne doivent jamais être écrits directement dans le code.
 
+### Lien à partager après déploiement
+
+Après `terraform apply`, récupérez les URLs :
+
+```bash
+cd infrastructure/terraform
+terraform output public_app_url    # site React (S3)
+terraform output public_api_url    # API (ALB)
+terraform output frontend_bucket_name
+```
+
+- **Application (à envoyer aux testeurs)** : valeur de `public_app_url` (ex. `http://diabetetrack-frontend-xxxx.s3-website-us-east-1.amazonaws.com`).
+- **API seule** : `public_api_url` + chemins `/api/...` (ex. `http://diabetetrack-alb-xxx.elb.amazonaws.com/api/health`).
+
+Pour que le **CD déploie aussi le build React** sur S3 à chaque merge sur `main` :
+
+1. Créez une **variable** de dépôt GitHub (Settings → Secrets and variables → Actions → **Variables**) nommée `FRONTEND_S3_BUCKET` avec la valeur affichée par `terraform output -raw frontend_bucket_name`.
+2. Accordez à l’utilisateur IAM utilisé par les secrets `AWS_*` les droits **S3** sur ce bucket (`s3:PutObject`, `s3:DeleteObject`, `s3:ListBucket`, etc.) et **elasticloadbalancing:DescribeLoadBalancers** pour lire le DNS de l’ALB.
+
+Si `FRONTEND_S3_BUCKET` est vide, le CD ne fait que le backend (comme avant) ; l’URL S3 existe quand même après Terraform, mais il faudra uploader le dossier `build/` manuellement ou activer la variable.
 
 L’infrastructure est décrite avec Terraform dans :
 
@@ -540,6 +562,8 @@ Ressources prévues :
 \- Load Balancer
 
 \- CloudWatch Logs
+
+\- Bucket S3 pour le frontend (site statique)
 
 
 

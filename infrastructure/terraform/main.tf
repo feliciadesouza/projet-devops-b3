@@ -229,6 +229,64 @@ resource "aws_ecr_repository" "backend" {
   }
 }
 
+# Site statique React (URL publique à partager après déploiement)
+resource "aws_s3_bucket" "frontend" {
+  bucket_prefix = "diabetetrack-frontend-"
+
+  tags = {
+    Name = "diabetetrack-frontend"
+  }
+}
+
+resource "aws_s3_bucket_ownership_controls" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket_website_configuration" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
+
+  website {
+    index_document = "index.html"
+    error_document = "index.html"
+  }
+}
+
+resource "aws_s3_bucket_policy" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
+  depends_on = [aws_s3_bucket_public_access_block.frontend]
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.frontend.arn}/*"
+      }
+    ]
+  })
+}
+
+locals {
+  frontend_website_host = "${aws_s3_bucket.frontend.id}.s3-website-${var.aws_region}.amazonaws.com"
+  frontend_public_url   = "http://${local.frontend_website_host}"
+  cors_origins_for_task = join(",", ["http://localhost:3000", "http://localhost:3001", "http://localhost", local.frontend_public_url])
+}
+
 resource "aws_ecs_cluster" "main" {
   name = "diabetetrack-cluster"
 
@@ -367,6 +425,10 @@ resource "aws_ecs_task_definition" "backend" {
         {
           name  = "PORT"
           value = "3000"
+        },
+        {
+          name  = "CORS_ORIGINS"
+          value = local.cors_origins_for_task
         }
       ]
 
@@ -414,6 +476,21 @@ resource "aws_ecs_service" "backend" {
 output "alb_dns_name" {
   description = "DNS name of the Application Load Balancer"
   value       = aws_lb.main.dns_name
+}
+
+output "public_api_url" {
+  description = "URL HTTP de l’API (ALB)"
+  value       = "http://${aws_lb.main.dns_name}"
+}
+
+output "frontend_bucket_name" {
+  description = "Nom du bucket S3 du frontend (variable GitHub Actions FRONTEND_S3_BUCKET)"
+  value       = aws_s3_bucket.frontend.id
+}
+
+output "public_app_url" {
+  description = "URL publique du frontend React (hébergement S3 website)"
+  value       = local.frontend_public_url
 }
 
 output "ecr_repository_url" {
