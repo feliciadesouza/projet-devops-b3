@@ -1,0 +1,36 @@
+{
+  "family": "diabetetrack-backend-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/diabetetrack-ecs-task-execution-role",
+  "containerDefinitions": [
+    {
+      "name": "diabetetrack-backend",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/diabetetrack-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "hostPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "DB_PORT", "value": "5432" },
+        { "name": "DB_NAME", "value": "diabetetrack" },
+        { "name": "PORT", "value": "3000" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/diabetetrack",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "backend"
+        }
+      }
+    }
+  ]
+}

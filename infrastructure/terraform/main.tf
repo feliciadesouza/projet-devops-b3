@@ -36,9 +36,18 @@ variable "db_password" {
 }
 
 variable "container_image" {
-  description = "Docker image URI for the backend container"
+  description = "Docker image URI for the backend container (override via terraform.tfvars after first CD push)"
   type        = string
-  default     = "public.ecr.aws/docker/library/node:18-alpine"
+  default     = null
+}
+
+data "aws_caller_identity" "current" {}
+
+locals {
+  container_image = coalesce(
+    var.container_image,
+    "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/diabetetrack-backend:latest"
+  )
 }
 
 data "aws_availability_zones" "available" {}
@@ -315,7 +324,7 @@ resource "aws_ecs_task_definition" "backend" {
   container_definitions = jsonencode([
     {
       name      = "diabetetrack-backend"
-      image     = var.container_image
+      image     = local.container_image
       essential = true
 
       portMappings = [
