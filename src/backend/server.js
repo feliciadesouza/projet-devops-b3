@@ -24,11 +24,18 @@ app.get('/api/health', (req, res) => {
 const sequelize = require('./config/database');
 require('./models/index');
 
-sequelize.sync({ alter: true }).then(() => {
-  console.log('✅ Base de données synchronisée');
-  app.listen(process.env.PORT || 3000, () => {
-    console.log(`🏥 DiabèteTrack Server running on port ${process.env.PORT || 3000}`);
+const PORT = process.env.PORT || 3000;
+
+function startServer() {
+  app.listen(PORT, () => {
+    console.log(`🏥 DiabèteTrack Server running on port ${PORT}`);
   });
-}).catch(e => console.log('❌ Erreur DB:', e.message));
+}
+
+sequelize
+  .sync({ alter: true })
+  .then(() => console.log('✅ Base de données synchronisée'))
+  .catch((err) => console.error('❌ Erreur DB:', err.message))
+  .finally(() => startServer());
 
 module.exports = app;
