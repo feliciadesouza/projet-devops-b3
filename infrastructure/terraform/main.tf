@@ -354,6 +354,10 @@ resource "aws_ecs_task_definition" "backend" {
         {
           name  = "JWT_SECRET"
           value = "change_me_in_aws_secrets"
+        },
+        {
+          name  = "PORT"
+          value = "3000"
         }
       ]
 
